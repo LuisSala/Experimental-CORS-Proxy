@@ -1,0 +1,150 @@
+<html>
+<head><title>CORS Test</title></head>
+<body>
+<h1>CORS</h1>
+<input id=files type=file>
+
+<h1>IFrame</h1>
+<input id="fileupload" type="file" name="doc" data-url="//q.local:3000/up">
+
+<h1>Tunnel</h1>
+<input id="upload" type="file" name="doc" data-url="//q.local:3000/up2">
+<div id="progress">
+    <div class="bar" style="width: 0%; height:18px; background: green"></div>
+</div>
+
+<h1>Proxy</h1>
+<input id="proxy-upload" type="file" name="doc">
+<div id="proxy-progress">
+    <div class="bar" style="width: 0%; height:18px; background: green"></div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<script src="js/jquery.iframe-transport.js"></script>
+<script src="js/jquery.fileupload.js"></script>
+<!--[if gte IE 8]><script src="js/cors/jquery.xdr-transport.js"></script><![endif]-->
+<script>
+    $(function () {
+
+        // Enable iframe cross-domain access via redirect option:
+        $('#fileupload').fileupload(
+                'option',
+                'redirect',
+                window.location.href.replace(
+                        /\/[^\/]*$/,
+                        '/result.html?%s'
+                )
+        );
+
+        $('#fileupload').fileupload(
+                {
+                    forceIframeTransport: true,
+                    add: function(e, data) {
+                        data.submit();
+                    }
+                }
+        );
+        // Enable iframe cross-domain access via redirect option:
+        $('#upload').fileupload(
+                'option',
+                'redirect',
+                window.location.href.replace(
+                        /\/[^\/]*$/,
+                        '/result.html?%s'
+                )
+        );
+
+        $('#upload').fileupload(
+                {
+                    add: function(e, data) {
+                        data.submit();
+                    },
+                    progress: function (e, data) {
+                        var progress = parseInt(data.loaded / data.total * 100, 10);
+                        $('#progress .bar').css(
+                                'width',
+                                progress + '%'
+                        );
+                    }
+                }
+        );
+
+        // Enable iframe cross-domain access via redirect option:
+
+        $('#proxy-upload').fileupload(
+                {
+                    multipart: false,
+                    redirect: window.location.href.replace(
+                            /\/[^\/]*$/,
+                            '/result.html?%s'
+                    ),
+                    type: 'POST',
+                    username: 'login',
+                    password: 'password',
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    add: function(e, data) {
+                        $('#proxy-upload').fileupload(
+                                'option',
+                                'url',
+                                'http://q.local:3000/_proxy/http://devapis.alfresco.com:80/alfresco/a/alfresco.com/public/cmis/versions/1.0/atom/content?id=cf49a946-c7be-4068-addf-925081910c82&alf_method=PUT'
+                        );
+                        data.submit();
+                    },
+                    progress: function (e, data) {
+                        var progress = parseInt(data.loaded / data.total * 100, 10);
+                        $('#proxy-progress .bar').css(
+                                'width',
+                                progress + '%'
+                        );
+                    }
+                }
+        );
+
+    });
+</script>
+<script>
+
+    function getCMISFileEntry(contentString, fileName) {
+        var now = new Date().getTime();
+        return '<?xml version="1.0" ?><atom:entry xmlns:atom="http://www.w3.org/2005/Atom" xmlns:cmis="http://docs.oasis-open.org/ns/cmis/core/200908/" xmlns:cmisra="http://docs.oasis-open.org/ns/cmis/restatom/200908/"><atom:id>urn:uuid:00000000-0000-0000-0000-00000000000</atom:id><atom:title>Sample Document ' + now + '</atom:title><atom:updated>2012-07-31T21:24:00Z</atom:updated><cmisra:content><cmisra:mediatype>cm:content</cmisra:mediatype><cmisra:base64>' + contentString + '</cmisra:base64></cmisra:content><cmisra:object xmlns:ns3="http://docs.oasis-open.org/ns/cmis/messaging/200908/"><cmis:properties><cmis:propertyId propertyDefinitionId="cmis:objectTypeId"><cmis:value>cmis:document</cmis:value></cmis:propertyId><cmis:propertyString propertyDefinitionId="cmis:name"><cmis:value>' + fileName + '</cmis:value></cmis:propertyString></cmis:properties></cmisra:object></atom:entry>'
+    }
+
+    document.getElementById('files').addEventListener('change', function(e) {
+        var file = this.files[0];
+        var fReader = new FileReader();
+        fReader.readAsDataURL(file);
+        fReader.onload = function(event) {
+            console.log('loaded!!');
+            var xhr = new XMLHttpRequest();
+            var url = 'http://q.local:3000/upload';
+            var b64 = event.target.result;
+            b64 = b64.substring(b64.indexOf(',')+1);
+
+            var fileName = document.getElementById('files').value.split(/(\\|\/)/g).pop();
+            console.log(fileName+"\n\n"+b64);
+            var body = getCMISFileEntry(b64, fileName);
+            xhr.addEventListener('progress', function(e) {
+                var done = e.position || e.loaded, total = e.totalSize || e.total;
+                console.log('xhr progress: ' + (Math.floor(done/total*1000)/10) + '%');
+            }, false);
+            if ( xhr.upload ) {
+                xhr.upload.onprogress = function(e) {
+                    var done = e.position || e.loaded, total = e.totalSize || e.total;
+                    console.log('xhr.upload progress: ' + done + ' / ' + total + ' = ' + (Math.floor(done/total*1000)/10) + '%');
+                };
+            }
+            xhr.onreadystatechange = function(e) {
+                if ( 4 == this.readyState ) {
+                    console.log(['xhr upload complete', e]);
+                }
+            };
+            xhr.open('post', url, true);
+            xhr.send(body);
+        }
+    }, false);
+</script>
+</body>
+</html>

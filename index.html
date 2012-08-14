@@ -1,0 +1,56 @@
+<html>
+<head><title>CORS Test</title></head>
+<body>
+
+<h1>Proxy Upload Test</h1>
+<input id="proxy-upload" type="file" name="doc">
+<div id="proxy-progress">
+    <div class="bar" style="width: 0%; height:18px; background: green"></div>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<script src="js/jquery.iframe-transport.js"></script>
+<script src="js/jquery.fileupload.js"></script>
+<!--[if gte IE 8]><script src="js/cors/jquery.xdr-transport.js"></script><![endif]-->
+<script>
+    $(function () {
+
+        // Enable iframe cross-domain access via redirect option:
+
+        $('#proxy-upload').fileupload(
+                {
+                    multipart: false,
+                    redirect: window.location.href.replace(
+                            /\/[^\/]*$/,
+                            '/result.html?%s'
+                    ),
+                    type: 'POST',
+                    username: 'login',
+                    password: 'password,
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    add: function(e, data) {
+                        $('#proxy-upload').fileupload(
+                                'option',
+                                'url',
+                                'http://q.local:3000/_proxy/http://devapis.alfresco.com:80/alfresco/a/alfresco.com/public/cmis/versions/1.0/atom/content?id=cf49a946-c7be-4068-addf-925081910c82&alf_method=PUT'
+                        );
+                        data.submit();
+                    },
+                    progress: function (e, data) {
+                        var progress = parseInt(data.loaded / data.total * 100, 10);
+                        $('#proxy-progress .bar').css(
+                                'width',
+                                progress + '%'
+                        );
+                    }
+                }
+        );
+
+    });
+</script>
+
+</body>
+</html>

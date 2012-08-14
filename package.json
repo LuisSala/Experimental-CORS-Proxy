@@ -1,0 +1,22 @@
+{
+  "author": "Luis Sala <luis.sala@alfresco.com> (http://alfresco.com)",
+  "name": "CORS_Test",
+  "description": "",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "main": "server.js",
+  "engines": {
+    "node": ">=0.4.11"
+  },
+	"directories" : {
+	"lib" : "lib"
+  },
+  "dependencies": {
+	"http-proxy": "",
+	"express": ""
+  },
+  "devDependencies": {}
+}
