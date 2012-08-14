@@ -9,7 +9,8 @@
   },
   "main": "server.js",
   "engines": {
-    "node": ">=0.4.11"
+    "node": ">=0.8.6",
+    "npm": ">=1.1.41"
   },
 	"directories" : {
 	"lib" : "lib"
